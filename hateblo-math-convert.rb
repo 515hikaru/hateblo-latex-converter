@@ -1,7 +1,6 @@
 #!/usr/bin/ruby
 # coding: utf-8
 
-require 'find'
 require 'fileutils'
 
 class HatebloMathText
@@ -9,8 +8,20 @@ class HatebloMathText
     @target_text = []
     @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
-      f.each_line do |line|
-        @target_text.push(line)
+      f.read.split(/\n(?=\\begin{(equation|align)})/).each do |block|
+        if block =~ /\\begin{align}/
+          block.split(/(?<=\\end{align})\n/).each do |inner|
+            @target_text.push(inner)
+          end
+        elsif block =~ /\\begin{equation}/
+          block.split(/(?<=\\end{equation})\n/).each do |inner|
+            @target_text.push(inner)
+          end
+        else
+          block.split("\n").each do |line|
+            @target_text.push(line)
+          end
+        end
       end
     end
   end
@@ -34,18 +45,21 @@ class HatebloMathText
   # \begin{equation} .. \end{equation} を [tex:{\begin{equation}...\end{equation}}] に
   def replace_environment(line)
     line.insert(0, '[tex:{') if line =~ /\\begin{(equation|align)}/
-    line.insert(-2, '}]') if line =~ /\\end{(equation|align)}/
+    line.insert(-1, '}]') if line =~ /\\end{(equation|align)}/
   end
 
   # _ と ^ を \_, \^ にする
   def escape_symbol(line)
-    return unless line =~ /[tex:{.*}]/
+    return unless line =~ /\[tex:{.*}\]/
     line.gsub!(/(?<!\\)\^/, '\^')
     line.gsub!(/(?<!\\)\_/, '\_')
+    line.gsub!(/\\\\/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
   end
 
   # 置換を実行
   def check_and_replace
+    @target_text.delete('align')
+    @target_text.delete('equation')
     @target_text.each do |line|
       replace_dollars(line)
       replace_environment(line)
@@ -59,6 +73,7 @@ class HatebloMathText
     File.open(@file_name, 'w') do |f|
       @target_text.each do |line|
         f.write(line)
+        f.write("\n")
       end
     end
   end
@@ -68,5 +83,6 @@ end
 
 if __FILE__ == $0
   target = HatebloMathText.new(ARGV[0])
+  target.print_line
   target.write_text
 end
