@@ -34,10 +34,17 @@ class HatebloMathText
     line.insert(-2, '}]') if line =~ /\\end{.*}/
   end
 
+  def escape_symbol(line)
+    return unless line =~ /[tex:{.*}]/
+    line.gsub!(/\^/, '\^')
+    line.gsub!(/\_/, '\_')
+  end
+
   def check_and_replace
     @target_text.each do |line|
       replace_dollars(line)
       replace_environment(line)
+      escape_symbol(line)
     end
   end
 
