@@ -31,6 +31,7 @@ class HatebloMathText
     check_and_replace
     @target_text.each do |line|
       puts line
+      puts '--------------------------------------'
     end
   end
 
@@ -73,7 +74,6 @@ class HatebloMathText
     File.open(@file_name, 'w') do |f|
       @target_text.each do |line|
         f.write(line)
-        f.write("\n")
       end
     end
   end
@@ -83,6 +83,5 @@ end
 
 if __FILE__ == $0
   target = HatebloMathText.new(ARGV[0])
-  target.print_line
   target.write_text
 end
