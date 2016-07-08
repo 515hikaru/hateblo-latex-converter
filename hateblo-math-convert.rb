@@ -8,7 +8,7 @@ class HatebloMathText
     @target_text = []
     @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
-      f.read.split(/\n(?=\\begin{(equation|align)})/).each do |block|
+      f.read.split(/(\n)(?=\\begin{(equation|align)})/).each do |block|
         if block =~ /\\begin{align}/
           block.split(/(?<=\\end{align})\n/).each do |inner|
             @target_text.push(inner)
@@ -31,6 +31,7 @@ class HatebloMathText
     check_and_replace
     @target_text.each do |line|
       puts line
+      puts '--------------------------------------'
     end
   end
 
@@ -50,7 +51,7 @@ class HatebloMathText
 
   # _ と ^ を \_, \^ にする
   def escape_symbol(line)
-    return unless line =~ /\[tex:{.*}\]/
+    return if line !~ /\[tex:{.*}\]/ && line !~ /\\begin{(equation|align)}/
     line.gsub!(/(?<!\\)\^/, '\^')
     line.gsub!(/(?<!\\)\_/, '\_')
     line.gsub!(/\\\\/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
@@ -83,6 +84,5 @@ end
 
 if __FILE__ == $0
   target = HatebloMathText.new(ARGV[0])
-  target.print_line
   target.write_text
 end
