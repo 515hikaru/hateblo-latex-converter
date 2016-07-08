@@ -15,7 +15,7 @@ class HatebloText
   end
 
   def print_line
-    check_and_replace_dollars
+    check_and_replace
     @target_text.each do |line|
       puts line
     end
@@ -28,9 +28,15 @@ class HatebloText
     replace_dollars(line)
   end
 
-  def check_and_replace_dollars
+  def replace_environment(line)
+    line.insert(0, '[tex:{') if line =~ /\\begin{.*}/
+    line.insert(-2, '}]') if line =~ /\\end{.*}/
+  end
+
+  def check_and_replace
     @target_text.each do |line|
       replace_dollars(line)
+      replace_environment(line)
     end
   end
 end
