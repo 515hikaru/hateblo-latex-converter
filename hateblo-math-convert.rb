@@ -40,8 +40,8 @@ class HatebloMathText
   # _ と ^ を \_, \^ にする
   def escape_symbol(line)
     return unless line =~ /[tex:{.*}]/
-    line.gsub!(/\^/, '\^')
-    line.gsub!(/\_/, '\_')
+    line.gsub!(/(?<!\\)\^/, '\^')
+    line.gsub!(/(?<!\\)\_/, '\_')
   end
 
   # 置換を実行
