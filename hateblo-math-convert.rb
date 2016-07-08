@@ -4,9 +4,10 @@
 require 'find'
 require 'fileutils'
 
-class HatebloText
+class HatebloMathText
   def initialize(md_doc)
     @target_text = []
+    @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
       f.each_line do |line|
         @target_text.push(line)
@@ -39,7 +40,16 @@ class HatebloText
       replace_environment(line)
     end
   end
+
+  def write_text
+    check_and_replace
+    File.open(@file_name, 'w') do |f|
+      @target_text.each do |line|
+        f.write(line)
+      end
+    end
+  end
 end
 
-target = HatebloText.new(ARGV[0])
-target.print_line
+target = HatebloMathText.new(ARGV[0])
+target.write_text
