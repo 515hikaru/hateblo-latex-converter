@@ -33,8 +33,8 @@ class HatebloMathText
 
   # \begin{equation} .. \end{equation} を [tex:{\begin{equation}...\end{equation}}] に
   def replace_environment(line)
-    line.insert(0, '[tex:{') if line =~ /\\begin{.*}/
-    line.insert(-2, '}]') if line =~ /\\end{.*}/
+    line.insert(0, '[tex:{') if line =~ /\\begin{(equation|align)}/
+    line.insert(-2, '}]') if line =~ /\\end{(equation|align)}/
   end
 
   # _ と ^ を \_, \^ にする
