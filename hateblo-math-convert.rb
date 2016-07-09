@@ -9,26 +9,41 @@ class HatebloMathText
     @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
       f.read.split(/(\n)(?=\\begin{(equation|align)})/).each do |block|
-        if block =~ /\\begin{align}/
-          block.split(/(?<=\\end{align})\n/).each do |inner|
-            @target_text.push(inner)
-          end
-        elsif block =~ /\\begin{equation}/
-          block.split(/(?<=\\end{equation})\n/).each do |inner|
-            @target_text.push(inner)
-          end
-        else
-          block.split("\n").each do |line|
-            @target_text.push(line)
-          end
-        end
+        init_target_text(block)
       end
+    end
+    check_and_replace
+  end
+
+  def split_text_and_mathblock(block, environment = 'none')
+    if environment == 'none'
+      block.split("\n").each do |line|
+        @target_text.push(line)
+      end
+    else
+      block.split(/(?<=\\end{#{environment}})\n/).each do |inner|
+        @target_text.push(inner)
+      end
+    end
+  end
+
+  def check_has_math_environment(block, env)
+    return env if block =~ /\\begin{#{env}}/
+    false
+  end
+
+  def init_target_text(block)
+    if check_has_math_environment(block, 'align') == 'align'
+      split_text_and_mathblock(block, 'align')
+    elsif check_has_math_environment(block, 'equation') == 'equation'
+      split_text_and_mathblock(block, 'equation')
+    else
+      split_text_and_mathblock(block)
     end
   end
 
   # debug 用の関数, 処理後のテキストを表示
   def print_line
-    check_and_replace
     @target_text.each do |line|
       puts line
       puts '--------------------------------------'
@@ -70,7 +85,6 @@ class HatebloMathText
 
   # ファイル書き込み
   def write_text
-    check_and_replace
     File.open(@file_name, 'w') do |f|
       @target_text.each do |line|
         f.write(line)
@@ -82,7 +96,8 @@ end
 
 # main
 
-if __FILE__ == $0
+if __FILE__ == $PROGRAM_NAME
   target = HatebloMathText.new(ARGV[0])
+  target.print_line
   target.write_text
 end
