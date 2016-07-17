@@ -121,8 +121,15 @@ class HatebloMathConverter
   def write_text
     File.open(@file_name, 'w') do |f|
       @target_text.each do |line|
-        f.write(line)
-        f.write("\n")
+        if line.match(@reg_exp_begin)
+          f.print("\n")
+          f.print(line)
+        elsif line.match(@reg_exp_end)
+          f.print(line)
+          f.print("\n")
+        else
+          f.print(line)
+        end
       end
     end
   end
