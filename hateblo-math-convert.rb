@@ -104,8 +104,8 @@ class HatebloMathConverter
   def escape_symbol(line)
     line.gsub!(/(?<!\\)\^/, '\^') unless @hatena
     line.gsub!(/(?<!\\)\_/, '\_') unless @hatena
-    line.gsub!(/\[/, '\[')
-    line.gsub!(/\]/, '\]')
+    line.gsub!(/\[/, '\\[')
+    line.gsub!(/\]/, '\\]')
     line.gsub!(/\\\\/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
   end
 
