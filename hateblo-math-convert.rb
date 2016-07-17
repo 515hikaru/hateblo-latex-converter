@@ -4,103 +4,103 @@
 require 'fileutils'
 require 'optparse'
 
-class HatebloMathText
+class HatebloMathConverter
   def initialize(md_doc, hatena)
     @target_text = []
     @hatena = hatena
+    @reg_exp_begin = /\\begin{(equation|align)}/
+    @reg_exp_end = /\\end{(equation|align)}/
     @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
-      content = f.each_line
-      split_file(content)
+      content = f.each_line.to_a
+      split_inline_and_block(content)
     end
     check_and_replace
   end
 
-  def split_file(file)
-    file.each_with_index do |item, _i|
-      split_dollar = item.split(/(\$*\$)/)
-      join_dollars(split_dollar)
+  def check_inline_math(line)
+    unless line.match(/\$*\$/)
+      @target_text.push(line)
+      return
+    end
+    inline_array = line.split(/\$/)
+    push_inline_math(inline_array)
+  end
+
+  def push_even_math(array)
+    array.each.with_index do |_item, i|
+      @target_text.push('$' + array[i] + '$') if i.even?
+      @target_text.push(array[i]) if i.odd?
     end
   end
 
-  def join_dollars(split_file)
-    split_file.each_with_index do |item, i|
-      next if i >= 1 && split_file[i - 1] == '$' && split_file[i + 1] == '$'
-      next if i >= 2 && split_file[i - 2] == '$'
-      if item != '$'
-        # @target_text.push(item)
-        puts item
+  def push_inline_math(array)
+    array.each.with_index do |_item, i|
+      @target_text.push('$' + array[i] + '$') if i.odd?
+      @target_text.push(array[i]) if i.even?
+    end
+  end
+
+  def split_inline_and_block(content)
+    index_get(content)
+    make_interval
+    content.each_with_index do |item, index|
+      next if @interval.include?(index)
+      if @block_index.include?(index)
+        @target_text.push(make_block(index, @block_index.index(index), content))
       else
-        dollar = [item, split_file[i + 1], split_file[i + 2]]
-        puts dollar
-        # @target_text.push(dollar.join(''))
+        check_inline_math(item)
       end
     end
   end
 
-  def split_text_and_mathblock(block, environment = 'none')
-    if environment == 'none'
-      if block =~ /\$*\$/
-        tmp_array = block.split(/(\$)/)
-        tmp_array.each_with_index do |item, i|
-          next if i >= 1 && tmp_array[i - 1] == '$' && tmp_array[i + 1] == '$'
-          next if i >= 2 && tmp_array[i - 2] == '$'
-          if item != '$'
-            @target_text.push(item)
-          else
-            dollar = [item, tmp_array[i + 1], tmp_array[i + 2]]
-            @target_text.push(dollar.join(''))
-          end
-        end
-      else
-        block.split("\n").each do |line|
-          @target_text.push(line)
-        end
-      end
-    else
-      block.split(/(?<=\\end{#{environment}})\n/).each do |inner|
-        @target_text.push(inner)
+  def make_block(param, block_index, content)
+    block = ''
+    until param > @block_index[block_index + 1]
+      block += content[param]
+      param += 1
+    end
+    block
+  end
+
+  def make_interval
+    even = (0..((@block_index.size / 2) - 1)).map { |i| i * 2 }
+    @interval = []
+    even.each do |i|
+      j = @block_index[i] + 1
+      until j > @block_index[i + 1]
+        @interval.push(j)
+        j += 1
       end
     end
   end
 
-  def check_has_math_environment(block, env)
-    return true if block =~ /\\begin{#{env}}/
-    false
-  end
-
-  def init_target_text(block)
-    if check_has_math_environment(block, 'align')
-      split_text_and_mathblock(block, 'align')
-    elsif check_has_math_environment(block, 'equation')
-      split_text_and_mathblock(block, 'equation')
-    else
-      split_text_and_mathblock(block)
+  def index_get(content)
+    @block_index = []
+    content.each.with_index do |item, i|
+      @block_index.push(i) if item.match(@reg_exp_begin)
+      @block_index.push(i) if item.match(@reg_exp_end)
     end
   end
 
-  # debug 用の関数, 処理後のテキストを表示
-  def print_line
+  def print_target
     @target_text.each do |line|
       puts line
     end
   end
 
-  # $...$ を [tex:{...}] に
   def replace_dollars(line)
     return unless line =~ /\$*\$/
-    line.sub!(/\$/, '[tex:{')
-    line.sub!(/\$/, '}]')
+    line.sub!(/^\$/, '[tex:{')
+    line.sub!(/\$$/, '}]')
     replace_dollars(line)
   end
 
-  # \begin{equation} .. \end{equation} を [tex:{\begin{equation}...\end{equation}}] に
   def replace_environment(line)
-    line.insert(0, '[tex:{') if line =~ /\\begin{(equation|align)}/
-    line.insert(-1, '}]') if line =~ /\\end{(equation|align)}/
+    line.insert(0, '[tex:{') if line =~ @reg_exp_begin
+    line.insert(-1, '}]') if line =~ @reg_exp_end
   end
 
-  # _ と ^ を \_, \^ にする
   def escape_symbol(line)
     line.gsub!(/(?<!\\)\^/, '\^') unless @hatena
     line.gsub!(/(?<!\\)\_/, '\_') unless @hatena
@@ -109,22 +109,15 @@ class HatebloMathText
     line.gsub!(/\\\\/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
   end
 
-  # 置換を実行
   def check_and_replace
-    @target_text.delete('align')
-    @target_text.delete('equation')
     @target_text.each do |line|
       next unless line =~ /\\begin{.*}/ || line =~ /\$*\$/
-      puts '-------------------------------------------------------'
-      puts line
-      puts '-------------------------------------------------------'
       escape_symbol(line)
       replace_dollars(line)
       replace_environment(line)
     end
   end
 
-  # ファイル書き込み
   def write_text
     File.open(@file_name, 'w') do |f|
       @target_text.each do |line|
@@ -135,8 +128,6 @@ class HatebloMathText
   end
 end
 
-# main
-
 if __FILE__ == $PROGRAM_NAME
   option = {}
   OptionParser.new do |opt|
@@ -145,7 +136,8 @@ if __FILE__ == $PROGRAM_NAME
     end
     opt.parse!(ARGV)
   end
-  target = HatebloMathText.new(ARGV[0], option[:hatena])
-  # target.print_line
+  target = HatebloMathConverter.new(ARGV[0], option[:hatena])
+  target = HatebloMathConverter.new(ARGV[0], option[:hatena])
+  target.print_target
   target.write_text
 end
