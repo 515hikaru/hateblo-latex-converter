@@ -17,8 +17,24 @@ class HatebloMathText
 
   def split_text_and_mathblock(block, environment = 'none')
     if environment == 'none'
-      block.split("\n").each do |line|
-        @target_text.push(line)
+      if block =~ /\$*\$/
+        tmp_array = block.split(/(\$)/)
+        tmp_array.each_with_index do |item, i|
+          if i >= 2
+            next if tmp_array[i - 1] == '$' && tmp_array[i + 1] == '$'
+            next if tmp_array[i - 2] == '$'
+          end
+          if item != '$'
+            @target_text.push(item)
+          else
+            dollar = [item, tmp_array[i + 1], tmp_array[i + 2]]
+            @target_text.push(dollar.join(''))
+          end
+        end
+      else
+        block.split("\n").each do |line|
+          @target_text.push(line)
+        end
       end
     else
       block.split(/(?<=\\end{#{environment}})\n/).each do |inner|
@@ -46,7 +62,6 @@ class HatebloMathText
   def print_line
     @target_text.each do |line|
       puts line
-      puts '--------------------------------------'
     end
   end
 
@@ -66,9 +81,10 @@ class HatebloMathText
 
   # _ と ^ を \_, \^ にする
   def escape_symbol(line)
-    return if line !~ /\[tex:{.*}\]/ && line !~ /\\begin{(equation|align)}/
     line.gsub!(/(?<!\\)\^/, '\^')
     line.gsub!(/(?<!\\)\_/, '\_')
+    line.gsub!(/\[(?!tex:)/, '\[')
+    line.gsub!(/(?<!\})\]/, '\]')
     line.gsub!(/\\\\/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
   end
 
@@ -77,6 +93,7 @@ class HatebloMathText
     @target_text.delete('align')
     @target_text.delete('equation')
     @target_text.each do |line|
+      next unless line =~ /\\begin{.*}/ || line =~ /\$*\$/
       replace_dollars(line)
       replace_environment(line)
       escape_symbol(line)
