@@ -140,7 +140,6 @@ if __FILE__ == $PROGRAM_NAME
     opt.parse!(ARGV)
   end
   target = HatebloMathConverter.new(ARGV[0], option[:hatena])
-  target = HatebloMathConverter.new(ARGV[0], option[:hatena])
   target.print_target if option[:print]
   target.write_text
 end
