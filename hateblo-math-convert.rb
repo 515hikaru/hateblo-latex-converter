@@ -28,14 +28,14 @@ class HatebloMathText
   end
 
   def check_has_math_environment(block, env)
-    return env if block =~ /\\begin{#{env}}/
+    return true if block =~ /\\begin{#{env}}/
     false
   end
 
   def init_target_text(block)
-    if check_has_math_environment(block, 'align') == 'align'
+    if check_has_math_environment(block, 'align')
       split_text_and_mathblock(block, 'align')
-    elsif check_has_math_environment(block, 'equation') == 'equation'
+    elsif check_has_math_environment(block, 'equation')
       split_text_and_mathblock(block, 'equation')
     else
       split_text_and_mathblock(block)
