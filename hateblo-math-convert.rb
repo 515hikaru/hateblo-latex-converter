@@ -2,17 +2,40 @@
 # coding: utf-8
 
 require 'fileutils'
+require 'optparse'
 
 class HatebloMathText
-  def initialize(md_doc)
+  def initialize(md_doc, hatena)
     @target_text = []
+    @hatena = hatena
     @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
-      f.read.split(/(\n)(?=\\begin{(equation|align)})/).each do |block|
-        init_target_text(block)
-      end
+      content = f.each_line
+      split_file(content)
     end
     check_and_replace
+  end
+
+  def split_file(file)
+    file.each_with_index do |item, _i|
+      split_dollar = item.split(/(\$*\$)/)
+      join_dollars(split_dollar)
+    end
+  end
+
+  def join_dollars(split_file)
+    split_file.each_with_index do |item, i|
+      next if i >= 1 && split_file[i - 1] == '$' && split_file[i + 1] == '$'
+      next if i >= 2 && split_file[i - 2] == '$'
+      if item != '$'
+        # @target_text.push(item)
+        puts item
+      else
+        dollar = [item, split_file[i + 1], split_file[i + 2]]
+        puts dollar
+        # @target_text.push(dollar.join(''))
+      end
+    end
   end
 
   def split_text_and_mathblock(block, environment = 'none')
@@ -20,10 +43,8 @@ class HatebloMathText
       if block =~ /\$*\$/
         tmp_array = block.split(/(\$)/)
         tmp_array.each_with_index do |item, i|
-          if i >= 2
-            next if tmp_array[i - 1] == '$' && tmp_array[i + 1] == '$'
-            next if tmp_array[i - 2] == '$'
-          end
+          next if i >= 1 && tmp_array[i - 1] == '$' && tmp_array[i + 1] == '$'
+          next if i >= 2 && tmp_array[i - 2] == '$'
           if item != '$'
             @target_text.push(item)
           else
@@ -81,10 +102,10 @@ class HatebloMathText
 
   # _ と ^ を \_, \^ にする
   def escape_symbol(line)
-    line.gsub!(/(?<!\\)\^/, '\^')
-    line.gsub!(/(?<!\\)\_/, '\_')
-    line.gsub!(/\[(?!tex:)/, '\[')
-    line.gsub!(/(?<!\})\]/, '\]')
+    line.gsub!(/(?<!\\)\^/, '\^') unless @hatena
+    line.gsub!(/(?<!\\)\_/, '\_') unless @hatena
+    line.gsub!(/\[/, '\[')
+    line.gsub!(/\]/, '\]')
     line.gsub!(/\\\\/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
   end
 
@@ -94,9 +115,12 @@ class HatebloMathText
     @target_text.delete('equation')
     @target_text.each do |line|
       next unless line =~ /\\begin{.*}/ || line =~ /\$*\$/
+      puts '-------------------------------------------------------'
+      puts line
+      puts '-------------------------------------------------------'
+      escape_symbol(line)
       replace_dollars(line)
       replace_environment(line)
-      escape_symbol(line)
     end
   end
 
@@ -114,7 +138,14 @@ end
 # main
 
 if __FILE__ == $PROGRAM_NAME
-  target = HatebloMathText.new(ARGV[0])
-  target.print_line
+  option = {}
+  OptionParser.new do |opt|
+    opt.on('-q', '--hatena', 'はてな記法用のエスケープ') do |v|
+      option[:hatena] = v
+    end
+    opt.parse!(ARGV)
+  end
+  target = HatebloMathText.new(ARGV[0], option[:hatena])
+  # target.print_line
   target.write_text
 end
