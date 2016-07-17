@@ -85,7 +85,7 @@ class HatebloMathConverter
 
   def print_target
     @target_text.each do |line|
-      puts line
+      print line
     end
   end
 
@@ -141,10 +141,13 @@ if __FILE__ == $PROGRAM_NAME
     opt.on('-q', '--hatena', 'はてな記法用のエスケープ') do |v|
       option[:hatena] = v
     end
+    opt.on('-p', '--print', '変換後の文書を標準出力') do |v|
+      option[:print] = v
+    end
     opt.parse!(ARGV)
   end
   target = HatebloMathConverter.new(ARGV[0], option[:hatena])
   target = HatebloMathConverter.new(ARGV[0], option[:hatena])
-  target.print_target
+  target.print_target if option[:print]
   target.write_text
 end
