@@ -5,11 +5,12 @@ require 'fileutils'
 require 'optparse'
 
 class HatebloMathConverter
+
   def initialize(md_doc, hatena)
     @target_text = []
-    @hatena = hatena
     @reg_exp_begin = /\\begin{(equation|align)}/
     @reg_exp_end = /\\end{(equation|align)}/
+    @hatena = hatena
     @file_name = File.basename(md_doc) + '.hatena'
     File.open(md_doc, 'r:utf-8') do |f|
       content = f.each_line.to_a
