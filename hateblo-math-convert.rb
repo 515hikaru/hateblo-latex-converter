@@ -28,9 +28,9 @@ class HatebloMathConverter
   end
 
   def push_inline_math(array)
-    array.each.with_index do |_item, i|
-      @target_text.push('$' + array[i] + '$') if i.odd?
-      @target_text.push(array[i]) if i.even?
+    array.each.with_index do |item, i|
+      @target_text.push('$' + item + '$') if i.odd?
+      @target_text.push(item) if i.even?
     end
   end
 
