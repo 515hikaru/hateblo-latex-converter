@@ -135,6 +135,10 @@ class HatebloMathConverter
 end
 
 if __FILE__ == $PROGRAM_NAME
+  unless ARGV[0]
+    puts "このプログラムを実行するには引数が必要です."
+    exit(0)
+  end
   option = {}
   OptionParser.new do |opt|
     opt.on('-q', '--hatena', 'はてな記法用のエスケープ') do |v|

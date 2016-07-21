@@ -4,6 +4,12 @@ MathJax の数式の部分をはてなブログの数式の記法に変換する
 
 インライン記法 `$$` を `[tex:{}]` に. ブロック数式 `\begin{equation} ~~ \end{equation}` を `[tex:{\begin{equation} ~~ \end{equation}}]` に変換するなどする.
 
+# 使い方
+
+* ファイル `hateblo-math-convert.rb` に実行権限を与え, パスを通す.
+* `hateblo-math-convert.rb hoge.md` と実行すると, 変換後のファイル `hoge.md.hatena` をカレントディレクトリに作成する.
+ * 現在複数の引数には対応していない
+
 # 機能
 
 * `$..$` を `[tex:{..}]` に置換
