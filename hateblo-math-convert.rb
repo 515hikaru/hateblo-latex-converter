@@ -99,13 +99,13 @@ class HatebloMathConverter
     line.gsub!(/(?<!\\)\^/, '\^') unless @hatena
     line.gsub!(/(?<!\\)\_/, '\_') unless @hatena
     if @hatena
-      line.gsub!(/\[/, '\[')
-      line.gsub!(/\]/, '\]')
+      line.gsub!(/\[/) { '\[' }
+      line.gsub!(/\]/) { '\]' }
     else
-      line.gsub!(/\[/, '\\\\\\[')
-      line.gsub!(/\]/, '\\\\\\]')
+      line.gsub!(/\[/) { '\\\\\[' }
+      line.gsub!(/\]/) { '\\\\\]' }
     end
-    line.gsub!(/\\\\$/, '\\\\\\\\\\') # なんでこんなに書かないといけないのかわかっていない
+    line.gsub!(/\\\\$/) { '\\\\\\' }
   end
 
   def check_and_replace
