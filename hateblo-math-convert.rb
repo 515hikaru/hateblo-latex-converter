@@ -5,18 +5,21 @@ require 'fileutils'
 require 'optparse'
 
 class HatebloMathConverter
-
   def initialize(md_doc, hatena)
-    @target_text = []
-    @reg_exp_begin = /\\begin{(equation|align)}/
-    @reg_exp_end = /\\end{(equation|align)}/
+    initialize_param
     @hatena = hatena
-    @file_name = File.basename(md_doc) + '.hatena'
+    @file_path, @file_name = File.split(md_doc)
     File.open(md_doc, 'r:utf-8') do |f|
       content = f.each_line.to_a
       split_inline_and_block(content)
     end
     check_and_replace
+  end
+
+  def initialize_param
+    @target_text = []
+    @reg_exp_begin = /\\begin{(equation|align)}/
+    @reg_exp_end = /\\end{(equation|align)}/
   end
 
   def check_inline_math(line)
@@ -118,7 +121,8 @@ class HatebloMathConverter
   end
 
   def write_text
-    File.open(@file_name, 'w') do |f|
+    FileUtils.cd(@file_path)
+    File.open(@file_name + '.hatena', 'w') do |f|
       @target_text.each do |line|
         if line.match(@reg_exp_begin)
           f.print("\n")
